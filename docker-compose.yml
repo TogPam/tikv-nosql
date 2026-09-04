@@ -4,6 +4,10 @@ services:
   pd:
     image: pingcap/pd:latest
     container_name: tikv-pd
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     ports:
       - "2379:2379"  # Client API & PD Dashboard
       - "2380:2380"
@@ -24,6 +28,10 @@ services:
     image: pingcap/tidb:latest
     container_name: tikv-tidb
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     depends_on:
       - pd
     ports:
@@ -38,6 +46,10 @@ services:
   tikv1:
     image: pingcap/tikv:latest
     container_name: tikv-tikv1
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     depends_on:
       - pd
     ports:
@@ -45,9 +57,11 @@ services:
     volumes:
       - tikv1-data:/data
     command:
-      - --pd-endpoints=pd:2379
+      - --pd-endpoints=http://pd:2379
       - --addr=0.0.0.0:20160
       - --advertise-addr=tikv1:20160
+      - --status-addr=0.0.0.0:20180
+      - --advertise-status-addr=tikv1:20180
       - --data-dir=/data/tikv1
     networks:
       - tikv-net
@@ -55,6 +69,10 @@ services:
   tikv2:
     image: pingcap/tikv:latest
     container_name: tikv-tikv2
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     depends_on:
       - pd
     ports:
@@ -62,27 +80,12 @@ services:
     volumes:
       - tikv2-data:/data
     command:
-      - --pd-endpoints=pd:2379
+      - --pd-endpoints=http://pd:2379
       - --addr=0.0.0.0:20160
       - --advertise-addr=tikv2:20160
+      - --status-addr=0.0.0.0:20180
+      - --advertise-status-addr=tikv2:20180
       - --data-dir=/data/tikv2
-    networks:
-      - tikv-net
-
-  tikv3:
-    image: pingcap/tikv:latest
-    container_name: tikv-tikv3
-    depends_on:
-      - pd
-    ports:
-      - "20163:20160"
-    volumes:
-      - tikv3-data:/data
-    command:
-      - --pd-endpoints=pd:2379
-      - --addr=0.0.0.0:20160
-      - --advertise-addr=tikv3:20160
-      - --data-dir=/data/tikv3
     networks:
       - tikv-net
 
