@@ -17,9 +17,9 @@ services:
       - --name=pd
       - --client-urls=http://0.0.0.0:2379
       - --peer-urls=http://0.0.0.0:2380
-      - --advertise-client-urls=http://pd:2379,http://127.0.0.1:2379
-      - --advertise-peer-urls=http://pd:2380
-      - --initial-cluster=pd=http://pd:2380
+      - --advertise-client-urls=http://10.19.193.19:2379,http://127.0.0.1:2379
+      - --advertise-peer-urls=http://10.19.193.19:2380
+      - --initial-cluster=pd=http://10.19.193.19:2380
       - --data-dir=/data/pd
     networks:
       - tikv-net
@@ -59,7 +59,7 @@ services:
     command:
       - --pd-endpoints=http://pd:2379
       - --addr=0.0.0.0:20160
-      - --advertise-addr=tikv1:20160
+      - --advertise-addr=10.19.193.19:20161
       - --status-addr=0.0.0.0:20180
       - --advertise-status-addr=tikv1:20180
       - --data-dir=/data/tikv1
@@ -82,7 +82,7 @@ services:
     command:
       - --pd-endpoints=http://pd:2379
       - --addr=0.0.0.0:20160
-      - --advertise-addr=tikv2:20160
+      - --advertise-addr=10.19.193.19:20162
       - --status-addr=0.0.0.0:20180
       - --advertise-status-addr=tikv2:20180
       - --data-dir=/data/tikv2
