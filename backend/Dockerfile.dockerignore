@@ -1,0 +1,4 @@
+**
+!target/
+!target/**
+!target/shoe-store-1.0.0.jar

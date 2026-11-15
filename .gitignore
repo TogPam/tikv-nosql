@@ -26,6 +26,8 @@ target
 dist
 tmp
 /bin
+frontend/node_modules/
+frontend/tsconfig.tsbuildinfo
 
 # fuzzing hack, see fuzz/cli.rs
 fuzz-incremental/

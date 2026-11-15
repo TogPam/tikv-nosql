@@ -1,216 +1,95 @@
-<img src="images/tikv-logo.png" alt="tikv_logo" width="300"/>
+# Shoe Store E-Commerce
 
-## [Website](https://tikv.org) | [Documentation](https://tikv.org/docs/latest/concepts/overview/) | [Community Chat](https://slack.tidb.io/invite?team=tikv-wg&channel=general)
+Ứng dụng thương mại điện tử giày dép gồm cửa hàng trực tuyến cho khách hàng và trang quản trị. Backend Spring Boot cung cấp REST API, xác thực JWT, quản lý sản phẩm, tồn kho và đơn hàng. Dữ liệu được lưu trong TiKV thông qua TiKV Java Client; cụm local chạy bằng Docker Compose cùng PD và TiDB. Frontend React hỗ trợ duyệt sản phẩm, giỏ hàng, đặt hàng, theo dõi đơn và thanh toán bằng VietQR.
 
-[![Build Status](https://ci.pingcap.net/buildStatus/icon?job=tikv_ghpr_build_master)](https://ci.pingcap.net/blue/organizations/jenkins/tikv_ghpr_build_master/activity)
-[![Coverage Status](https://codecov.io/gh/tikv/tikv/branch/master/graph/badge.svg)](https://codecov.io/gh/tikv/tikv)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2574/badge)](https://bestpractices.coreinfrastructure.org/projects/2574)
+## Công nghệ và phiên bản
 
-TiKV is an open-source, distributed, and transactional key-value database. Unlike other traditional NoSQL systems, TiKV not only provides classical key-value APIs, but also transactional APIs with ACID compliance. Built in Rust and powered by Raft, TiKV was originally created by [PingCAP](https://en.pingcap.com) to complement [TiDB](https://github.com/pingcap/tidb), a distributed HTAP database compatible with the MySQL protocol.
+| Thành phần | Phiên bản trong cấu hình | Ghi chú |
+| --- | --- | --- |
+| Java | 17 | Phiên bản biên dịch backend; môi trường hiện tại chạy Java 21.0.12 |
+| Spring Boot | 3.3.4 | Backend REST API và Spring Security |
+| TiKV Java Client | 3.3.0 | Client giao dịch tới TiKV thông qua PD |
+| TiKV, PD, TiDB | `pingcap/*:latest` | Compose chưa pin image tag; runtime TiKV/PD đã kiểm tra là 7.5.1 |
+| Maven | 3.10.0 | Phiên bản có trong môi trường phát triển hiện tại |
+| React / React DOM | 18.3.1 | Frontend |
+| Vite | 5.4.11 | Development server và bundler |
+| TypeScript | 5.6.3 | Kiểm tra kiểu và build frontend |
+| Tailwind CSS | 3.4.16 | CSS tooling |
+| Axios | 1.7.7 | HTTP client |
+| Node.js / npm | 26.13.0 / 12.2.2 | Phiên bản dùng để build frontend trong môi trường hiện tại |
 
-The design of TiKV ('Ti' stands for titanium) is inspired by some great distributed systems from Google, such as BigTable, Spanner, and Percolator, and some of the latest achievements in academia in recent years, such as the Raft consensus algorithm.
+Các image TiKV, PD và TiDB đang dùng tag `latest`, nên phiên bản thực tế có thể đổi khi pull image mới. Nếu cần build tái lập, hãy pin phiên bản image trong `docker-compose.yml`.
 
-If you're interested in contributing to TiKV, or want to build it from source,
-see [CONTRIBUTING.md](./CONTRIBUTING.md). For maintainership-oriented code
-reading and review context, see
-[doc/maintenance-guides/README.md](./doc/maintenance-guides/README.md).
+## Chạy local
 
-![cncf_logo](images/cncf.png#gh-light-mode-only)
-![cncf_logo](images/cncf-white.png#gh-dark-mode-only)
+### Yêu cầu
 
-TiKV is a graduated project of the [Cloud Native Computing Foundation](https://cncf.io/) (CNCF). If you are an organization that wants to help shape the evolution of technologies that are container-packaged, dynamically-scheduled and microservices-oriented, consider joining the CNCF. For details about who's involved and how TiKV plays a role, read the CNCF [announcement](https://www.cncf.io/announcements/2020/09/02/cloud-native-computing-foundation-announces-tikv-graduation/).
+- Docker Engine hoặc Docker Desktop với Docker Compose.
+- JDK 17 trở lên và Maven.
+- Node.js và npm.
+- Khoảng 4 GB RAM và vài GB dung lượng trống cho các container TiKV.
 
----
+### 1. Build backend JAR
 
-With the implementation of the Raft consensus algorithm in Rust and consensus state stored in RocksDB, TiKV guarantees data consistency. [Placement Driver (PD)](https://github.com/pingcap/pd/), which is introduced to implement auto-sharding, enables automatic data migration. The transaction model is similar to Google's Percolator with some performance improvements. TiKV also provides snapshot isolation (SI), snapshot isolation with lock (SQL: `SELECT ... FOR UPDATE`), and externally consistent reads and writes in distributed transactions.
-
-TiKV has the following key features:
-
-- **Geo-Replication**
-
-    TiKV uses [Raft](http://raft.github.io/) and the Placement Driver to support Geo-Replication.
-
-- **Horizontal scalability**
-
-    With PD and carefully designed Raft groups, TiKV excels in horizontal scalability and can easily scale to 100+ TBs of data.
-
-- **Consistent distributed transactions**
-
-    Similar to Google's Spanner, TiKV supports externally-consistent distributed transactions.
-
-- **Coprocessor support**
-
-    Similar to HBase, TiKV implements a coprocessor framework to support distributed computing.
-
-- **Cooperates with [TiDB](https://github.com/pingcap/tidb)**
-
-    Thanks to the internal optimization, TiKV and TiDB can work together to be a compelling database solution with high horizontal scalability, externally-consistent transactions, support for RDBMS, and NoSQL design patterns.
-
-## Governance
-
-See [Governance](https://github.com/tikv/community/blob/master/GOVERNANCE.md).
-
-## Documentation
-
-For instructions on deployment, configuration, and maintenance of TiKV,see TiKV documentation on our [website](https://tikv.org/docs/4.0/tasks/introduction/). For more details on concepts and designs behind TiKV, see [Deep Dive TiKV](https://tikv.org/deep-dive/introduction/).
-
-> **Note:**
->
-> We have migrated our documentation from the [TiKV's wiki page](https://github.com/tikv/tikv/wiki/) to the [official website](https://tikv.org/docs). The original Wiki page is discontinued. If you have any suggestions or issues regarding documentation, offer your feedback [here](https://github.com/tikv/website).
-
-## TiKV adopters
-
-You can view the list of [TiKV Adopters](https://tikv.org/adopters/).
-
-## TiKV software stack
-
-![The TiKV software stack](images/tikv_stack.png)
-
-- **Placement Driver:** PD is the cluster manager of TiKV, which periodically checks replication constraints to balance load and data automatically.
-- **Store:** There is a RocksDB within each Store and it stores data into the local disk.
-- **Region:** Region is the basic unit of Key-Value data movement. Each Region is replicated to multiple Nodes. These multiple replicas form a Raft group.
-- **Node:** A physical node in the cluster. Within each node, there are one or more Stores. Within each Store, there are many Regions.
-
-When a node starts, the metadata of the Node, Store and Region are recorded into PD. The status of each Region and Store is reported to PD regularly.
-
-## Quick start
-
-### Deploy a playground with TiUP
-
-The most quickest to try out TiKV with TiDB is using TiUP, a component manager for TiDB.
-
-You can see [this page](https://docs.pingcap.com/tidb/stable/quick-start-with-tidb#deploy-a-local-test-environment-using-tiup-playground) for a step by step tutorial.
-
-### Deploy a playground with binary
-
-TiKV is able to run separately with PD, which is the minimal deployment required.
-
-1. Download and extract binaries.
+Tại thư mục gốc dự án:
 
 ```bash
-$ export TIKV_VERSION=v7.5.0
-$ export GOOS=darwin  # only {darwin, linux} are supported
-$ export GOARCH=amd64 # only {amd64, arm64} are supported
-$ curl -O  https://tiup-mirrors.pingcap.com/tikv-$TIKV_VERSION-$GOOS-$GOARCH.tar.gz
-$ curl -O  https://tiup-mirrors.pingcap.com/pd-$TIKV_VERSION-$GOOS-$GOARCH.tar.gz
-$ tar -xzf tikv-$TIKV_VERSION-$GOOS-$GOARCH.tar.gz
-$ tar -xzf pd-$TIKV_VERSION-$GOOS-$GOARCH.tar.gz
+cd backend
+mvn clean package -DskipTests
+cd ..
 ```
 
-2. Start PD instance.
+Lệnh này tạo `backend/target/shoe-store-1.0.0.jar`, là artifact được backend Docker image sử dụng.
+
+### 2. Khởi động backend và cụm TiKV
+
+Tại thư mục gốc dự án, nơi có `docker-compose.yml`:
 
 ```bash
-$ ./pd-server --name=pd --data-dir=/tmp/pd/data --client-urls="http://127.0.0.1:2379" --peer-urls="http://127.0.0.1:2380" --initial-cluster="pd=http://127.0.0.1:2380" --log-file=/tmp/pd/log/pd.log
+docker compose up -d --build
 ```
 
-3. Start TiKV instance.
+Backend chạy trong cùng Docker network với PD/TiKV để phân giải được các địa chỉ store nội bộ. Không chạy backend trực tiếp trên host bằng `mvn spring-boot:run` với cấu hình Compose hiện tại: PD quảng bá hostname `tikv1` và `tikv2`, chỉ phân giải được trong Docker network.
+
+Kiểm tra container và log backend:
 
 ```bash
-$ ./tikv-server --pd-endpoints="127.0.0.1:2379" --addr="127.0.0.1:20160" --data-dir=/tmp/tikv/data --log-file=/tmp/tikv/log/tikv.log
+docker compose ps
+docker compose logs -f backend
 ```
 
-4. Install TiKV Client(Python) and verify the deployment, required Python 3.5+.
+### 3. Chạy frontend
+
+Mở terminal khác:
 
 ```bash
-$ pip3 install -i https://test.pypi.org/simple/ tikv-client
+cd frontend
+npm install
+npm run dev
 ```
 
-```python
-from tikv_client import RawClient
+Mở cửa hàng tại <http://localhost:5173>. Frontend gọi backend tại <http://localhost:8080/api>.
 
-client = RawClient.connect(["127.0.0.1:2379"])
+### Địa chỉ dịch vụ
 
-client.put(b'foo', b'bar')
-print(client.get(b'foo')) # b'bar'
+- Cửa hàng: <http://localhost:5173>
+- Backend API: <http://localhost:8080/api>
+- Giao diện OpenAPI: <http://localhost:8080/swagger-ui/index.html>
+- PD API: <http://localhost:2379>
+- TiDB MySQL protocol: `127.0.0.1:4000`
 
-client.put(b'foo', b'baz')
-print(client.get(b'foo')) # b'baz'
-```
-
-### Deploy a cluster with Docker Compose
-
-The easiest way to run a complete TiKV cluster (3 PD + 3 TiKV nodes) for development and testing is using Docker Compose. The setup uses pre-built TiKV and PD nightly images from Docker Hub, so no building is required.
-
-> **Note:** On macOS, use `docker compose` (space) instead of `docker-compose` (hyphen) in all commands.
-
-1. Start the cluster:
+Kiểm tra API danh mục sản phẩm:
 
 ```bash
-$ docker-compose up -d
-# On macOS, use: docker compose up -d
+curl http://localhost:8080/api/shoes
 ```
 
-2. Check cluster status:
+### Dừng dịch vụ
+
+Tại thư mục gốc dự án:
 
 ```bash
-$ docker-compose ps
-# On macOS, use: docker compose ps
+docker compose down
 ```
 
-3. Access the cluster:
-
-- PD endpoints: `127.0.0.1:23791`, `127.0.0.1:23792`, `127.0.0.1:23793`
-- TiKV status: `http://localhost:20181/status`, `http://localhost:20182/status`, `http://localhost:20183/status`
-
-For more details, see [docker-compose.README.md](./docker-compose.README.md).
-
-### Deploy a cluster with TiUP
-
-You can see [this manual](./doc/deploy.md) of production-like cluster deployment presented by @c4pt0r.
-
-### Build from source
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
-
-## Client drivers
-
-- [Go](https://github.com/tikv/client-go) (The most stable and widely used)
-- [Java](https://github.com/tikv/client-java)
-- [Rust](https://github.com/tikv/client-rust)
-- [C](https://github.com/tikv/client-c)
-
-If you want to try the Go client, see [Go Client](https://tikv.org/docs/4.0/reference/clients/go/).
-
-## Security
-
-### Security audit
-
-A third-party security auditing was performed by Cure53. See the full report [here](./security/Security-Audit.pdf).
-
-### Reporting Security Vulnerabilities
-
-To report a security vulnerability, please send an email to [TiKV-security](mailto:tikv-security@lists.cncf.io) group.
-
-See [Security](SECURITY.md) for the process and policy followed by the TiKV project.
-
-## Communication
-
-Communication within the TiKV community abides by [TiKV Code of Conduct](./CODE_OF_CONDUCT.md). Here is an excerpt:
-
-> In the interest of fostering an open and welcoming environment, we as
-contributors and maintainers pledge to making participation in our project and
-our community a harassment-free experience for everyone, regardless of age, body
-size, disability, ethnicity, sex characteristics, gender identity and expression,
-level of experience, education, socio-economic status, nationality, personal
-appearance, race, religion, or sexual identity and orientation.
-
-### Social Media
-
-- [Twitter](https://twitter.com/tikvproject)
-- [Blog](https://tikv.org/blog/)
-- [Reddit](https://www.reddit.com/r/TiKV)
-- Post questions or help answer them on [Stack Overflow](https://stackoverflow.com/questions/tagged/tikv)
-
-### Slack
-
-Join the TiKV community on [Slack](https://slack.tidb.io/invite?team=tikv-wg&channel=general) - Sign up and join channels on TiKV topics that interest you.
-
-## License
-
-TiKV is under the Apache 2.0 license. See the [LICENSE](./LICENSE) file for details.
-
-## Acknowledgments
-
-- Thanks [etcd](https://github.com/coreos/etcd) for providing some great open source tools.
-- Thanks [RocksDB](https://github.com/facebook/rocksdb) for their powerful storage engines.
-- Thanks [rust-clippy](https://github.com/rust-lang/rust-clippy). We do love the great project.
+Lệnh trên giữ lại dữ liệu trong named volume. Không thêm `-v` nếu muốn giữ dữ liệu TiKV/PD.
