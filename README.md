@@ -58,6 +58,17 @@ docker compose ps
 docker compose logs -f backend
 ```
 
+Prometheus được Compose cấu hình để scrape metrics từ PD, TiDB và các TiKV store. Sau khi stack chạy, mở <http://localhost:9090/targets> để kiểm tra các target.
+
+### Xem biểu đồ trên TiDB Dashboard
+
+1. Mở TiDB Dashboard tại <http://localhost:2379/dashboard/> và đăng nhập.
+2. Vào **User Profile** > **Prometheus Data Source**.
+3. Chọn **Use customized address**, nhập `http://prometheus:9090`, rồi bấm **Update**. Đây là hostname trong Docker network; không dùng `localhost:9090` trong cấu hình datasource của Dashboard.
+4. Mở mục **Monitoring** để xem biểu đồ metrics.
+
+Cảnh báo `NgMonitoring is not started` liên quan các tính năng Continuous Profiling và Top SQL nâng cao; nó không ngăn các biểu đồ Monitoring cơ bản dùng Prometheus.
+
 ### 3. Chạy frontend
 
 Mở terminal khác:
@@ -76,6 +87,7 @@ Mở cửa hàng tại <http://localhost:5173>. Frontend gọi backend tại <ht
 - Backend API: <http://localhost:8080/api>
 - Giao diện OpenAPI: <http://localhost:8080/swagger-ui/index.html>
 - PD API: <http://localhost:2379>
+- Prometheus: <http://localhost:9090>
 - TiDB MySQL protocol: `127.0.0.1:4000`
 
 Kiểm tra API danh mục sản phẩm:

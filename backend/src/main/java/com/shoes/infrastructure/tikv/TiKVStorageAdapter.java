@@ -2,6 +2,7 @@ package com.shoes.infrastructure.tikv;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,6 +45,17 @@ public class TiKVStorageAdapter implements KvReader, KvPrefixScanner, KvAtomicWr
         return entries;
     }
 
+    public static List<String> prepareSecondaryKeys(String primaryKey, Map<String, byte[]> mutations) {
+        return mutations.keySet().stream()
+            .filter(key -> !key.equals(primaryKey))
+            .sorted(Comparator.naturalOrder())
+            .toList();
+    }
+
+    public static long nextCommitTs(long startTs, long observedTs) {
+        return Math.max(startTs + 1, observedTs);
+    }
+
     @Override
     public void writeAtomically(Map<String, byte[]> mutations) {
         if (mutations.isEmpty()) return;
@@ -54,15 +66,13 @@ public class TiKVStorageAdapter implements KvReader, KvPrefixScanner, KvAtomicWr
         try (TwoPhaseCommitter committer = new TwoPhaseCommitter(session, startTs)) {
             committer.prewritePrimaryKey(ConcreteBackOffer.newCustomBackOff(10000), primaryKey, ordered.get(primary));
             List<BytePairWrapper> secondaryPairs = new ArrayList<>();
-            ordered.forEach((key, value) -> {
-                if (!key.equals(primary)) {
-                    secondaryPairs.add(new BytePairWrapper(key.getBytes(StandardCharsets.UTF_8), value));
-                }
-            });
+            for (String key : prepareSecondaryKeys(primary, ordered)) {
+                secondaryPairs.add(new BytePairWrapper(key.getBytes(StandardCharsets.UTF_8), ordered.get(key)));
+            }
             if (!secondaryPairs.isEmpty()) {
                 committer.prewriteSecondaryKeys(primaryKey, secondaryPairs.iterator(), 10000);
             }
-            long commitTs = session.getTimestamp().getVersion();
+            long commitTs = nextCommitTs(startTs, session.getTimestamp().getVersion());
             committer.commitPrimaryKey(ConcreteBackOffer.newCustomBackOff(10000), primaryKey, commitTs);
             if (!secondaryPairs.isEmpty()) {
                 List<ByteWrapper> secondaryKeys = secondaryPairs.stream()

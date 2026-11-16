@@ -9,6 +9,7 @@ import { CartCheckoutPage } from './pages/CartCheckoutPage'
 import { OrderTrackingPage } from './pages/OrderTrackingPage'
 import { ShoeDetailPage } from './pages/ShoeDetailPage'
 import { StorefrontPage } from './pages/StorefrontPage'
+import './features.css'
 
 export function App() {
   return <AuthProvider><CartProvider><BrowserRouter><Navbar /><Routes>

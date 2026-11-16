@@ -1,4 +1,27 @@
 services:
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: shoe-store-prometheus
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=7d
+    depends_on:
+      - pd
+      - tidb
+      - tikv1
+      - tikv2
+
   pd:
     image: pingcap/pd:latest
     container_name: tikv-pd
@@ -101,3 +124,4 @@ volumes:
   pd-bridge-data:
   tikv1-bridge-data:
   tikv2-bridge-data:
+  prometheus-data:

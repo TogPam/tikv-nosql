@@ -8,6 +8,9 @@ export function StorefrontPage() {
   const [shoes, setShoes] = useState<ShoeProduct[]>([])
   const [brand, setBrand] = useState('Tất cả')
   const [search, setSearch] = useState('')
+  const [size, setSize] = useState('')
+  const [minPrice, setMinPrice] = useState('')
+  const [maxPrice, setMaxPrice] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -16,7 +19,11 @@ export function StorefrontPage() {
 
   const brands = ['Tất cả', ...new Set(shoes.map((shoe) => shoe.brand))]
   const filtered = shoes.filter((shoe) => (brand === 'Tất cả' || shoe.brand === brand)
-    && `${shoe.name} ${shoe.brand}`.toLowerCase().includes(search.toLowerCase()))
+    && `${shoe.name} ${shoe.brand}`.toLowerCase().includes(search.toLowerCase())
+    && (!size || shoe.sizes.includes(Number(size)))
+    && (!minPrice || shoe.price >= Number(minPrice))
+    && (!maxPrice || shoe.price <= Number(maxPrice)))
+  const sizes = [...new Set(shoes.flatMap((shoe) => shoe.sizes))].sort((a, b) => a - b)
   const featured = shoes.find((shoe) => shoe.shoeId === 'SHOE-LIMITED-01') ?? shoes[0]
 
   return <main className="store-page">
@@ -30,6 +37,12 @@ export function StorefrontPage() {
     <section className="collection-section" id="collection">
       <div className="section-heading"><div><span className="eyebrow">BỘ SƯU TẬP ĐƯỢC TUYỂN CHỌN</span><h2>Tìm đôi giày dành cho bạn.</h2></div><span className="result-count">{filtered.length.toString().padStart(2, '0')} mẫu</span></div>
       <div className="collection-tools"><div className="brand-tabs">{brands.map((name) => <button key={name} className={brand === name ? 'active' : ''} onClick={() => setBrand(name)}>{name}</button>)}</div><label className="search-box"><Search size={16} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Tìm trong bộ sưu tập" /></label></div>
+      <div className="catalog-filters" aria-label="Bộ lọc sản phẩm">
+        <label>Kích cỡ<select value={size} onChange={(event) => setSize(event.target.value)}><option value="">Tất cả kích cỡ</option>{sizes.map((option) => <option key={option} value={option}>EU {option}</option>)}</select></label>
+        <label>Giá từ<input type="number" min="0" value={minPrice} onChange={(event) => setMinPrice(event.target.value)} placeholder="0 ₫" /></label>
+        <label>Đến<input type="number" min="0" value={maxPrice} onChange={(event) => setMaxPrice(event.target.value)} placeholder="Không giới hạn" /></label>
+        {(size || minPrice || maxPrice) && <button className="text-button" onClick={() => { setSize(''); setMinPrice(''); setMaxPrice('') }}>Xóa lọc</button>}
+      </div>
       {error && <p className="notice error-notice">{error}</p>}
       <div className="product-grid">{filtered.map((shoe, index) => <ShoeCard key={shoe.shoeId} product={shoe} index={index} />)}</div>
       {!error && filtered.length === 0 && <p className="empty-state">Không tìm thấy mẫu giày phù hợp.</p>}

@@ -130,6 +130,22 @@ public class OrderTransactionService {
         return cancelled;
     }
 
+    public Order advanceStatus(String orderId, OrderStatus nextStatus) {
+        if (nextStatus == OrderStatus.PAID || nextStatus == OrderStatus.CANCELLED
+            || nextStatus == OrderStatus.PENDING_PAYMENT) {
+            throw new IllegalArgumentException("Trạng thái này phải được xử lý bằng thao tác thanh toán hoặc hủy đơn.");
+        }
+        Order order = loadOrder(orderId);
+        stateMachine.validate(order.status(), nextStatus);
+        Instant now = Instant.now();
+        Order updated = order.withStatus(nextStatus);
+        Map<String, byte[]> mutations = new LinkedHashMap<>();
+        mutations.put(TiKVKeyBuilder.order(orderId), codec.encode(updated));
+        addStatusMutation(mutations, orderId, nextStatus, now);
+        writer.writeAtomically(mutations);
+        return updated;
+    }
+
     private void addStatusMutation(Map<String, byte[]> mutations, String orderId, OrderStatus status, Instant now) {
         mutations.put(TiKVKeyBuilder.orderStatus(orderId, now.toEpochMilli()),
             codec.encode(new OrderStatusHistory(orderId, status, now, status.name())));

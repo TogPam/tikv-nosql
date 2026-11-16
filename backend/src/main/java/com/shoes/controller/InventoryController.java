@@ -5,6 +5,7 @@ import com.shoes.service.InventoryService;
 import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -17,6 +18,11 @@ public class InventoryController {
 
     @GetMapping("/{shoeId}/{size}/{color}")
     public SkuInventory get(@PathVariable String shoeId, @PathVariable int size, @PathVariable String color) {
+        return inventory.get(shoeId, size, color);
+    }
+
+    @GetMapping(params = {"shoeId", "size", "color"})
+    public SkuInventory getByQuery(@RequestParam String shoeId, @RequestParam int size, @RequestParam String color) {
         return inventory.get(shoeId, size, color);
     }
 
