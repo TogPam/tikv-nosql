@@ -1,0 +1,122 @@
+services:
+  pd:
+    image: pingcap/pd:latest
+    container_name: tikv-pd
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+      - "4000:4000"
+      - "10080:10080"
+      - "20161:20161"
+      - "20181:20181"
+      - "20162:20162"
+      - "20182:20182"
+      - "20163:20163"
+      - "20183:20183"
+    volumes:
+      - pd-bridge-data:/data
+    command:
+      - --name=pd
+      - --client-urls=http://0.0.0.0:2379
+      - --peer-urls=http://0.0.0.0:2380
+      - --advertise-client-urls=http://127.0.0.1:2379
+      - --advertise-peer-urls=http://127.0.0.1:2380
+      - --initial-cluster=pd=http://127.0.0.1:2380
+      - --data-dir=/data/pd
+
+  tidb:
+    image: pingcap/tidb:latest
+    container_name: tikv-tidb
+    restart: unless-stopped
+    network_mode: "service:pd"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      - pd
+    command:
+      - --store=tikv
+      - --path=127.0.0.1:2379
+
+  tikv1:
+    image: pingcap/tikv:latest
+    container_name: tikv-tikv1
+    restart: unless-stopped
+    network_mode: "service:pd"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      - pd
+    volumes:
+      - tikv1-bridge-data:/data
+    command:
+      - --pd-endpoints=http://127.0.0.1:2379
+      - --addr=0.0.0.0:20161
+      - --advertise-addr=127.0.0.1:20161
+      - --status-addr=0.0.0.0:20181
+      - --advertise-status-addr=127.0.0.1:20181
+      - --data-dir=/data/tikv1
+
+  tikv2:
+    image: pingcap/tikv:latest
+    container_name: tikv-tikv2
+    restart: unless-stopped
+    network_mode: "service:pd"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      - pd
+    volumes:
+      - tikv2-bridge-data:/data
+    command:
+      - --pd-endpoints=http://127.0.0.1:2379
+      - --addr=0.0.0.0:20162
+      - --advertise-addr=127.0.0.1:20162
+      - --status-addr=0.0.0.0:20182
+      - --advertise-status-addr=127.0.0.1:20182
+      - --data-dir=/data/tikv2
+
+  tikv3:
+    image: pingcap/tikv:latest
+    container_name: tikv-tikv3
+    restart: unless-stopped
+    network_mode: "service:pd"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    depends_on:
+      - pd
+    volumes:
+      - tikv3-bridge-data:/data
+    command:
+      - --pd-endpoints=http://127.0.0.1:2379
+      - --addr=0.0.0.0:20163
+      - --advertise-addr=127.0.0.1:20163
+      - --status-addr=0.0.0.0:20183
+      - --advertise-status-addr=127.0.0.1:20183
+      - --data-dir=/data/tikv3
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: shoe-store-frontend
+    restart: on-failure
+    ports:
+      - "5173:5173"
+
+volumes:
+  pd-bridge-data:
+  tikv1-bridge-data:
+  tikv2-bridge-data:
+  tikv3-bridge-data:

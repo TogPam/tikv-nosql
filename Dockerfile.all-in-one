@@ -1,0 +1,22 @@
+# Stage 1: Build React Frontend
+FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+COPY frontend/package*.json ./
+RUN npm install
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: All-In-One Runner based on PingCAP image
+FROM pingcap/pd:latest
+
+COPY --from=pingcap/tikv:latest /tikv-server /tikv-server
+COPY --from=pingcap/tidb:latest /tidb-server /tidb-server
+COPY --from=frontend-builder /app/dist /app/frontend
+
+COPY spa_server.py /spa_server.py
+COPY start-all-in-one.sh /start-all-in-one.sh
+RUN chmod +x /start-all-in-one.sh /tikv-server /tidb-server
+
+EXPOSE 2379 2380 4000 10080 5173 20161 20181 20162 20182 20163 20183
+
+ENTRYPOINT ["/bin/bash", "/start-all-in-one.sh"]
