@@ -1,41 +1,41 @@
 ﻿# ==============================================================================
-# SCRIPT THÊM / CẬP NHẬT SẢN PHẨM VÀO CƠ SỞ DỮ LIỆU TIKV
-# Bạn có thể tự do chỉnh sửa các thông tin sản phẩm ở phần [BƯỚC 1] bên dưới
+# SCRIPT THEM / CAP NHAT SAN PHAM VAO CO SO DU LIEU TIKV
+# Ban co the tuy chinh thong tin san pham o phan [BUOC 1] ben duoi
 # ==============================================================================
 
-# --- [BƯỚC 1: TÙY CHỈNH THÔNG TIN SẢN PHẨM MỚI TẠI ĐÂY] ---
-$shoeId       = "SHOE-CONVERSE-70S"             # Mã sản phẩm (duy nhất, viết liền không dấu)
-$name         = "Converse Chuck 70 Classic"     # Tên sản phẩm hiển thị
-$brand        = "Converse"                      # Hãng sản xuất
-$price        = 1850000                         # Giá bán (VNĐ)
-$sizes        = @(39, 40, 41, 42)               # Các size giày (mảng số)
-$colors       = @("Black", "Parchment")         # Các màu sắc (mảng chuỗi)
+# --- [BUOC 1: TUY CHINH THONG TIN SAN PHAM TAI DAY] ---
+$shoeId       = "SHOE-CONVERSE-70S"             # Ma san pham (duy nhat, viet lien khong dau)
+$name         = "Converse Chuck 70 Classic"     # Ten san pham hien thi
+$brand        = "Converse"                      # Hang san xuat
+$price        = 1850000                         # Gia ban (VND)
+$sizes        = @(39, 40, 41, 42)               # Cac size mo ban (mang so)
+$colors       = @("Black", "Parchment")         # Cac mau sac mo ban (mang chuoi)
 $description  = "Giay canvas co dien phong cach Vintage thanh lich."
 $imageUrl     = "https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=1200"
-$initialStock = 12                              # Số lượng tồn kho ban đầu cho mỗi phân loại (size/màu)
+$initialStock = 15                              # So luong ton kho ban dau cho moi SKU (size/mau)
 
-# --- [BƯỚC 2: XỬ LÝ LƯU VÀO TIKV QUA API] ---
+# --- [BUOC 2: XU LY LUU VAO TIKV QUA API] ---
 $baseUrl = "http://localhost:8080"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Host "==================================================================" -ForegroundColor Cyan
-Write-Host "      BẮT ĐẦU ĐẨY DỮ LIỆU SẢN PHẨM VÀO CƠ SỞ DỮ LIỆU TIKV        " -ForegroundColor Cyan
+Write-Host "      BAT DAU DAY DU LIEU SAN PHAM VAO CO SO DU LIEU TIKV        " -ForegroundColor Cyan
 Write-Host "==================================================================" -ForegroundColor Cyan
 
-# 1. Đăng nhập Admin lấy token
-Write-Host "[1/3] Đăng nhập tài khoản Quản trị Admin..." -ForegroundColor Yellow
+# 1. Dang nhap Admin lay JWT token
+Write-Host "[1/3] Dang nhap tai khoan Quan tri Admin..." -ForegroundColor Yellow
 $loginPayload = @{ username = "admin"; password = "123456" } | ConvertTo-Json
 try {
     $login = Invoke-RestMethod -Uri "$baseUrl/api/auth/login" -Method Post -ContentType "application/json" -Body $loginPayload
     $headers = @{ "Authorization" = "Bearer $($login.token)" }
-    Write-Host " -> Đăng nhập thành công!" -ForegroundColor Green
+    Write-Host " -> Dang nhap thanh cong!" -ForegroundColor Green
 } catch {
-    Write-Host " -> Lỗi kết nối máy chủ backend: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host " -> Loi ket noi may chu backend: $($_.Exception.Message)" -ForegroundColor Red
     exit
 }
 
-# 2. Đẩy thông tin sản phẩm vào TiKV (Key: product:{shoeId})
-Write-Host "[2/3] Lưu sản phẩm '$name' vào TiKV..." -ForegroundColor Yellow
+# 2. Day thong tin san pham vao TiKV (Key: product:{shoeId})
+Write-Host "[2/3] Luu san pham '$name' vao TiKV..." -ForegroundColor Yellow
 $productObj = @{
     shoeId      = $shoeId
     name        = $name
@@ -50,22 +50,22 @@ $productJson = $productObj | ConvertTo-Json -Depth 4
 $productBytes = [System.Text.Encoding]::UTF8.GetBytes($productJson)
 
 try {
-    # Thử tạo mới sản phẩm (POST)
+    # Thu tao moi san pham (POST)
     $created = Invoke-RestMethod -Uri "$baseUrl/api/admin/products" -Method Post -Headers $headers -ContentType "application/json; charset=utf-8" -Body $productBytes
-    Write-Host " -> [TẠO MỚI] Đã tạo Key thành công: product:$shoeId" -ForegroundColor Green
+    Write-Host " -> [TAO MOI] Da tao Key thanh cong: product:$shoeId" -ForegroundColor Green
 } catch {
-    # Nếu sản phẩm đã tồn tại, tự động chuyển sang Cập nhật (PUT)
+    # Neu san pham da ton tai, tu dong chuyen sang Cap nhat (PUT)
     try {
         $created = Invoke-RestMethod -Uri "$baseUrl/api/admin/products/$shoeId" -Method Put -Headers $headers -ContentType "application/json; charset=utf-8" -Body $productBytes
-        Write-Host " -> [CẬP NHẬT] Đã cập nhật thành công Key: product:$shoeId" -ForegroundColor Green
+        Write-Host " -> [CAP NHAT] Da cap nhat thanh cong Key: product:$shoeId" -ForegroundColor Green
     } catch {
-        Write-Host " -> Lỗi lưu sản phẩm: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host " -> Loi luu san pham: $($_.Exception.Message)" -ForegroundColor Red
         exit
     }
 }
 
-# 3. Khởi tạo tồn kho cho từng mã SKU (Key: inv:{shoeId}:{size}:{color})
-Write-Host "[3/3] Khởi tạo tồn kho ($initialStock đôi cho mỗi phân loại SKU)..." -ForegroundColor Yellow
+# 3. Khoi tao ton kho cho tung ma SKU (Key: inv:{shoeId}:{size}:{color})
+Write-Host "[3/3] Khoi tao ton kho ($initialStock doi cho moi phan loai SKU)..." -ForegroundColor Yellow
 $totalSkuCount = 0
 foreach ($s in $sizes) {
     foreach ($c in $colors) {
@@ -81,23 +81,23 @@ foreach ($s in $sizes) {
         $totalSkuCount++
     }
 }
-Write-Host " -> Đã lưu thành công $totalSkuCount mã SKU tồn kho (Key: inv:$($shoeId):...)!" -ForegroundColor Green
+Write-Host " -> Da luu thanh cong $totalSkuCount ma SKU ton kho (Key: inv:$($shoeId):...)!" -ForegroundColor Green
 
-# 4. Hiển thị tổng kết kết quả
+# 4. Hien thi tong ket ket qua
 Write-Host ""
 Write-Host "==================================================================" -ForegroundColor Cyan
-Write-Host " ĐẨY DỮ LIỆU THÀNH CÔNG VÀO CƠ SỞ DỮ LIỆU TIKV!                   " -ForegroundColor Green
+Write-Host " DAY DU LIEU THANH CONG VAO CO SO DU LIEU TIKV!                   " -ForegroundColor Green
 Write-Host "==================================================================" -ForegroundColor Cyan
-Write-Host " - Mã Key sản phẩm   : product:$($created.shoeId)" -ForegroundColor White
-Write-Host " - Tên sản phẩm      : $($created.name)" -ForegroundColor White
-Write-Host " - Hãng / Brand      : $($created.brand)" -ForegroundColor White
-Write-Host " - Giá niêm yết      : $([string]::Format('{0:N0}', $created.price)) VNĐ" -ForegroundColor White
-Write-Host " - Các Size mở bán   : $($created.sizes -join ', ')" -ForegroundColor White
-Write-Host " - Các Màu sắc       : $($created.colors -join ', ')" -ForegroundColor White
-Write-Host " - Số lượng tồn kho  : $initialStock đôi / SKU (Tổng kho: $($totalSkuCount * $initialStock) đôi)" -ForegroundColor White
+Write-Host " - Ma Key san pham   : product:$($created.shoeId)" -ForegroundColor White
+Write-Host " - Ten san pham      : $($created.name)" -ForegroundColor White
+Write-Host " - Hang / Brand      : $($created.brand)" -ForegroundColor White
+Write-Host " - Gia niem yet      : $([string]::Format('{0:N0}', $created.price)) VND" -ForegroundColor White
+Write-Host " - Cac Size mo ban   : $($created.sizes -join ', ')" -ForegroundColor White
+Write-Host " - Cac Mau sac       : $($created.colors -join ', ')" -ForegroundColor White
+Write-Host " - So luong ton kho  : $initialStock doi / SKU (Tong kho: $($totalSkuCount * $initialStock) doi)" -ForegroundColor White
 Write-Host ""
-Write-Host "👉 KIỂM TRA NGAY TRÊN GIAO DIỆN:" -ForegroundColor Yellow
-Write-Host " 1. Web Cửa hàng  : http://localhost:5173/ (Sản phẩm xuất hiện ngay)" -ForegroundColor White
-Write-Host " 2. Web Quản trị  : http://localhost:5173/admin (Xem và sửa tồn kho)" -ForegroundColor White
-Write-Host " 3. API Danh mục  : http://localhost:8080/api/shoes" -ForegroundColor White
+Write-Host "[*] KIEM TRA NGAY TREN GIAO DIEN:" -ForegroundColor Yellow
+Write-Host " 1. Web Cua hang  : http://localhost:5173/ (San pham xuat hien ngay)" -ForegroundColor White
+Write-Host " 2. Web Quan tri  : http://localhost:5173/admin (Xem va sua ton kho)" -ForegroundColor White
+Write-Host " 3. API Danh muc  : http://localhost:8080/api/shoes" -ForegroundColor White
 Write-Host "==================================================================" -ForegroundColor Cyan
