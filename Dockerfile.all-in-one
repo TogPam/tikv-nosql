@@ -9,6 +9,8 @@ RUN npm run build
 # Stage 2: All-In-One Runner based on PingCAP image
 FROM pingcap/pd:latest
 
+RUN dnf install -y procps-ng && dnf clean all
+
 COPY --from=pingcap/tikv:latest /tikv-server /tikv-server
 COPY --from=pingcap/tidb:latest /tidb-server /tidb-server
 COPY --from=frontend-builder /app/dist /app/frontend
