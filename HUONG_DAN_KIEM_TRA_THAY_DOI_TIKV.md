@@ -124,3 +124,37 @@ Mở trực tiếp trên trình duyệt (hoặc qua Swagger [http://localhost:80
 3. Bấm chọn menu **Key Visualizer** (bên cột trái).
 4. Chọn khoảng thời gian **Recent 30 min** (hoặc nhấn nút Refresh sau 1 phút).
 5. Bạn sẽ thấy trên dòng thời gian xuất hiện các **ô nhiệt sáng màu (vàng/cam/tím rực)** đại diện cho các giao dịch và lưu lượng đọc ghi vừa tác động lên cụm TiKV!
+
+---
+
+## PHẦN 5: GIẢ LẬP FLASH SALE - TRANH MUA HÀNG ĐỒNG THỜI (`demo-flash-sale.ps1`)
+* **Mục đích:** Chứng minh tính toàn vẹn (ACID Isolation) của giao dịch phân tán 2PC trên TiKV: ngăn chặn hoàn toàn hiện tượng bán quá số lượng (Overselling) khi nhiều khách hàng cùng tranh mua 1 món hàng tại cùng một thời điểm.
+* **Kịch bản:**
+  - Thiết lập kho cho đôi giày phiên bản giới hạn `SHOE-LIMITED-01` chỉ còn đúng **2 đôi**.
+  - Kích hoạt đồng thời **6 khách hàng** cùng bấm Đặt hàng cùng một phần nghìn giây.
+* **Cách chạy:**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -File .\demo-flash-sale.ps1
+  ```
+* **Kết quả kiểm chứng:**
+  - Đúng **2 khách hàng** chốt đơn thành công.
+  - **4 khách hàng còn lại** bị từ chối với mã lỗi `409 Conflict` (Hết hàng / Xung đột khóa TiKV).
+  - Tồn kho trong CSDL TiKV giảm về đúng `0`, tuyệt đối không bao giờ bị âm kho!
+
+---
+
+## PHẦN 6: GIẢ LẬP DÒNG CHẢY GIAO DỊCH THỜI GIAN THỰC (`demo-live-stream.ps1`)
+* **Mục đích:** Tạo luồng mua sắm sống động liên tục (đọc sản phẩm, xem tồn kho, đặt hàng, thanh toán chuyển khoản QR, hủy đơn) để trình chiếu thực tế trước hội đồng.
+* **Cách chạy khi thuyết trình:**
+  1. Mở 2 cửa sổ trình duyệt song song:
+     - Bên trái: Trang Quản trị Admin 👉 [http://localhost:5173/admin](http://localhost:5173/admin)
+     - Bên phải: TiKV Dashboard 👉 [http://localhost:2379/dashboard](http://localhost:2379/dashboard)
+  2. Mở PowerShell chạy lệnh:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\demo-live-stream.ps1
+     ```
+  3. **Hiệu ứng trực quan quan sát được:**
+     - Trên PowerShell: Hiển thị nhật ký từng chu kỳ mua sắm kèm mốc thời gian thời gian thực.
+     - Trên Web Admin: Bấm nút Refresh sẽ thấy các đơn hàng mới liên tục xuất hiện và nhảy trạng thái từ `PENDING_PAYMENT` $\rightarrow$ `PAID` (hoặc `CANCELLED`).
+     - Trên TiKV Dashboard: Chỉ số QPS tăng, lưu lượng đọc/ghi và Key Visualizer cập nhật liên tục!
+
