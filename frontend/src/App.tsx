@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import { CartProvider } from './context/CartContext'
 import { AdminDashboardPage } from './pages/AdminDashboardPage'
+import { DatabaseConsolePage } from './pages/DatabaseConsolePage'
 import { AuthPage } from './pages/AuthPage'
 import { CartCheckoutPage } from './pages/CartCheckoutPage'
 import { OrderTrackingPage } from './pages/OrderTrackingPage'
@@ -21,7 +22,10 @@ export function App() {
       <Route path="/orders/:orderId" element={<OrderTrackingPage />} />
       <Route path="/orders" element={<Navigate to="/orders/current" replace />} />
     </Route>
-    <Route element={<ProtectedRoute admin />}><Route path="/admin" element={<AdminDashboardPage />} /></Route>
+    <Route element={<ProtectedRoute admin />}>
+      <Route path="/admin" element={<AdminDashboardPage />} />
+      <Route path="/admin/database" element={<DatabaseConsolePage />} />
+    </Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Routes></BrowserRouter></CartProvider></AuthProvider>
 }

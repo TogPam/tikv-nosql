@@ -1,0 +1,26 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["prometheus:9090"]
+
+  - job_name: pd
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["tikv-all-in-one:2379"]
+
+  - job_name: tidb
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["tikv-all-in-one:10080"]
+
+  - job_name: tikv
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "tikv-all-in-one:20181"
+          - "tikv-all-in-one:20182"
+          - "tikv-all-in-one:20183"
